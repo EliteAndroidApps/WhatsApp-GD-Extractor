@@ -3,11 +3,12 @@ Allows WhatsApp users on Android to extract their backed up WhatsApp data from G
 
 ###### BRANCH UPDATES:
 v1.0 - Initial release.  
+v1.1 - Added Python 3 support.  
 
 
 ###### PREREQUISITES:
  1. O/S: Windows Vista, Windows 7, Windows 8, Windows 10, Mac OS X or Linux  
- 2. Python 2.x - If not installed: https://www.python.org/downloads/  
+ 2. Python 2.x or 3.x - If not installed: https://www.python.org/downloads/  
  3. Android device with WhatsApp installed and the Google Drive backup feature enabled  
  4. Google services device id (if you want to reduce the risk of being logged out of Google)  
      Search Google Play for "device id" for plenty of apps that can reveal this information  
@@ -23,8 +24,8 @@ v1.0 - Initial release.
  
 
 ###### TROUBLESHOOTING:
- 1. Check you have the required imports installed (especially the requests module).  
-     I.E: pip install requests  
+ 1. Check you have the required imports installed (configparser and requests).  
+     I.E.: pip install configparser requests  
 
 
 ###### CREDITS:
