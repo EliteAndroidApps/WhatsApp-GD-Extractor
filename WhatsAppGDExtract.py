@@ -45,19 +45,19 @@ def downloadFileGoogleDrive(bearer, url, local):
     print('Downloaded: "'+local+'".')
 
 def gDriveFileMap():
-	global bearer
-	data = rawGoogleDriveRequest(bearer, 'https://www.googleapis.com/drive/v2/files')
-	jres = json.loads(data)
-	backups = []
-	for i in range(0, 10):
-		try:
-		    if jres['items'][i]['title'] == 'gdrive_file_map':
-				backups.append((jres['items'][i]['description'], rawGoogleDriveRequest(bearer, jres['items'][i]['downloadUrl'])))
-		except:
-			pass
-	if len(backups) == 0:
-	    quit('Unable to locate google drive file map for: '+pkg+'.')
-	return backups
+    global bearer
+    data = rawGoogleDriveRequest(bearer, 'https://www.googleapis.com/drive/v2/files')
+    jres = json.loads(data)
+    backups = []
+    for i in range(0, 10):
+        try:
+            if jres['items'][i]['title'] == 'gdrive_file_map':
+                backups.append((jres['items'][i]['description'], rawGoogleDriveRequest(bearer, jres['items'][i]['downloadUrl'])))
+        except:
+            pass
+    if len(backups) == 0:
+        quit('Unable to locate google drive file map for: '+pkg+'.')
+    return backups
 
 def getConfigs():
     global gmail, passw, devid, pkg, sig, client_pkg, client_sig, client_ver
@@ -79,20 +79,20 @@ def jsonPrint(data):
     print(json.dumps(json.loads(data), indent=4, sort_keys=True))
 
 def localFileLog(md5):
-	logfile = 'logs'+os.path.sep+'files.log'
-	if not os.path.exists(os.path.dirname(logfile)):
-		os.makedirs(os.path.dirname(logfile))
-	with open(logfile, 'a') as log:
-		log.write(md5+'\n')
+    logfile = 'logs'+os.path.sep+'files.log'
+    if not os.path.exists(os.path.dirname(logfile)):
+        os.makedirs(os.path.dirname(logfile))
+    with open(logfile, 'a') as log:
+        log.write(md5+'\n')
 
 def localFileList():
-	logfile = 'logs'+os.path.sep+'files.log'
-	if os.path.isfile(logfile):
-		flist = open(logfile, 'r')
-		return [line.split('\n') for line in flist.readlines()]
-	else:
-		open(logfile, 'w')
-		return localFileList()
+    logfile = 'logs'+os.path.sep+'files.log'
+    if os.path.isfile(logfile):
+        flist = open(logfile, 'r')
+        return [line.split('\n') for line in flist.readlines()]
+    else:
+        open(logfile, 'w')
+        return localFileList()
 
 def createSettingsFile():
     with open('settings.cfg', 'w') as cfg:
