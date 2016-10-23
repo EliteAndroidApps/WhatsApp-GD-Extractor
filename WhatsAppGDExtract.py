@@ -48,17 +48,16 @@ def gDriveFileMap():
 	global bearer
 	data = rawGoogleDriveRequest(bearer, 'https://www.googleapis.com/drive/v2/files')
 	jres = json.loads(data)
+	backups = []
 	for i in range(0, 10):
 		try:
 		    if jres['items'][i]['title'] == 'gdrive_file_map':
-			    n = i
+				backups.append((jres['items'][i]['description'], rawGoogleDriveRequest(bearer, jres['items'][i]['downloadUrl'])))
 		except:
 			pass
-	try:
-		n
-	except UnboundLocalError:
+	if len(backups) == 0:
 	    quit('Unable to locate google drive file map for: '+pkg+'.')
-	return jres['items'][n]['description'], rawGoogleDriveRequest(bearer, jres['items'][n]['downloadUrl'])
+	return backups
 
 def getConfigs():
     global gmail, passw, devid, pkg, sig, client_pkg, client_sig, client_ver
@@ -98,37 +97,47 @@ def localFileList():
 def createSettingsFile():
     with open('settings.cfg', 'w') as cfg:
         cfg.write('[auth]\ngmail = alias@gmail.com\npassw = yourpassword\ndevid = 0000000000000000\n\n[app]\npkg = com.whatsapp\nsig = 38a0f7d505fe18fec64fbf343ecaaaf310dbd799\n\n[client]\npkg = com.google.android.gms\nsig = 38918a453d07199354f8b19af05ec6562ced5788\nver = 9877000')
-	
+
 def getSingleFile(data, asset):
     data = json.loads(data)
     for entries in data:
         if entries['f'] == asset:
             return entries['f'], entries['m'], entries['r'], entries['s']
 
-def getMultipleFiles(data):
+def getMultipleFiles(data, folder):
     files = localFileList()
     data = json.loads(data)
     for entries in data:
         if any(entries['m'] in lists for lists in files) == False or 'database' in entries['f'].lower():
-            local = 'WhatsApp'+os.path.sep+entries['f'].replace("/", os.path.sep)
+            local = folder+os.path.sep+entries['f'].replace("/", os.path.sep)
             if os.path.isfile(local) and 'database' not in local.lower():
                 quit('Skipped: "'+local+'".')
             else:
                 downloadFileGoogleDrive(bearer, 'https://www.googleapis.com/drive/v2/files/'+entries['r']+'?alt=media', local)
                 localFileLog(entries['m'])
 
-def runMain(mode, asset):
+def runMain(mode, asset, bID):
     global bearer
     if os.path.isfile('settings.cfg') == False:
         createSettingsFile()
     getConfigs()
     bearer = getGoogleDriveToken(getGoogleAccountTokenFromAuth())
-    drive = gDriveFileMap()
+    drives = gDriveFileMap()
     if mode == 'info':
-        jsonPrint(drive[0])
+        for i, drive in enumerate(drives):
+            if len(drives) > 1:
+                print("Backup: "+str(i))
+            jsonPrint(drive[0])
     elif mode == 'list':
-        jsonPrint(drive[1])
+        for i, drive in enumerate(drives):
+            if len(drives) > 1:
+                print("Backup: "+str(i))
+            jsonPrint(drive[1])
     elif mode == 'pull':
+        try:
+            drive = drives[bID]
+        except IndexError:
+            quit("Invalid backup ID: " + str(bID))
         target = getSingleFile(drive[1], asset)
         try:
             f = target[0]
@@ -144,32 +153,41 @@ def runMain(mode, asset):
             downloadFileGoogleDrive(bearer, 'https://www.googleapis.com/drive/v2/files/'+r+'?alt=media', local)
             localFileLog(m)
     elif mode == 'sync':
-        getMultipleFiles(drive[1])
+        for i, drive in enumerate(drives):
+            folder = 'WhatsApp'
+            if len(drives) > 1:
+                print('Backup: '+str(i))
+                folder = 'WhatsApp-' + str(i)
+            getMultipleFiles(drive[1], folder)
 
 def main():
     args = len(sys.argv)
     if  args < 2 or str(sys.argv[1]) == '-help' or str(sys.argv[1]) == 'help':
-        print('\nUsage: '+str(sys.argv[0])+' -help|-vers|-info|-list|-sync|-pull file\n\nExamples:\n')
+        print('\nUsage: '+str(sys.argv[0])+' -help|-vers|-info|-list|-sync|-pull file [backupID]\n\nExamples:\n')
         print('python '+str(sys.argv[0])+' -help (this help screen)')
         print('python '+str(sys.argv[0])+' -vers (version information)')
         print('python '+str(sys.argv[0])+' -info (google drive app settings)')
         print('python '+str(sys.argv[0])+' -list (list all availabe files)')
         print('python '+str(sys.argv[0])+' -sync (sync all files locally)')
-        print('python '+str(sys.argv[0])+' -pull "Databases/msgstore.db.crypt12" (download)\n')
+        print('python '+str(sys.argv[0])+' -pull "Databases/msgstore.db.crypt12" [backupID] (download)\n')
     elif str(sys.argv[1]) == '-info' or str(sys.argv[1]) == 'info':
-        runMain('info', 'settings')
+        runMain('info', 'settings', 0)
     elif str(sys.argv[1]) == '-list' or str(sys.argv[1]) == 'list':
-        runMain('list', 'all')
+        runMain('list', 'all', 0)
     elif str(sys.argv[1]) == '-sync' or str(sys.argv[1]) == 'sync':
-        runMain('sync', 'all')
+        runMain('sync', 'all', 0)
     elif str(sys.argv[1]) == '-vers' or str(sys.argv[1]) == 'vers':
         print('\nWhatsAppGDExtract Version 1.1 Copyright (C) 2016 by TripCode\n')
-    elif args != 3:
-        quit('\nUsage: python '+str(sys.argv[0])+' -help|-vers|-info|-list|-sync|-pull file\n')
+    elif args < 3:
+        quit('\nUsage: python '+str(sys.argv[0])+' -help|-vers|-info|-list|-sync|-pull file [backupID]\n')
     elif str(sys.argv[1]) == '-pull' or str(sys.argv[1]) == 'pull':
-        runMain('pull', str(sys.argv[2]))
+        try:
+            bID = int(sys.argv[3])
+        except (IndexError, ValueError):
+            bID = 0
+        runMain('pull', str(sys.argv[2]), bID)
     else:
-        quit('\nUsage: python '+str(sys.argv[0])+' -help|-vers|-info|-list|-sync|-pull file\n')
+        quit('\nUsage: python '+str(sys.argv[0])+' -help|-vers|-info|-list|-sync|-pull file [backupID]\n')
 
 if __name__ == "__main__":
     main()
