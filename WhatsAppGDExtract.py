@@ -49,14 +49,14 @@ def gDriveFileMap():
     data = rawGoogleDriveRequest(bearer, 'https://www.googleapis.com/drive/v2/files')
     jres = json.loads(data)
     backups = []
-    for i in range(0, 10):
+    for result in jres['items']:
         try:
-            if jres['items'][i]['title'] == 'gdrive_file_map':
-                backups.append((jres['items'][i]['description'], rawGoogleDriveRequest(bearer, jres['items'][i]['downloadUrl'])))
+            if result['title'] == 'gdrive_file_map':
+                backups.append((result['description'], rawGoogleDriveRequest(bearer, result['downloadUrl'])))
         except:
             pass
     if len(backups) == 0:
-        quit('Unable to locate google drive file map for: '+pkg+'.')
+        quit('Unable to locate google drive file map for: '+pkg)
     return backups
 
 def getConfigs():
