@@ -62,11 +62,13 @@ def gDriveFileMap():
 def getConfigs():
     global gmail, passw, devid, pkg, sig, client_pkg, client_sig, client_ver
     config = ConfigParser()
+    auth = ConfigParser()
     try:
         config.read('settings.cfg')
-        gmail = config.get('auth', 'gmail')
-        passw = config.get('auth', 'passw')
-        devid = config.get('auth', 'devid')
+        auth.read('auth.cfg')
+        gmail = auth.get('auth', 'gmail')
+        passw = auth.get('auth', 'passw')
+        devid = auth.get('auth', 'devid')
         pkg = config.get('app', 'pkg')
         sig = config.get('app', 'sig')
         client_pkg = config.get('client', 'pkg')
@@ -74,6 +76,8 @@ def getConfigs():
         client_ver = config.get('client', 'ver')
     except(ConfigParser.NoSectionError, ConfigParser.NoOptionError):
         quit('The "settings.cfg" file is missing or corrupt!')
+    if passw == "" or passw is None:
+        quit('The "auth.cfg" file should contain your gmail password')
 
 def jsonPrint(data):
     print(json.dumps(json.loads(data), indent=4, sort_keys=True))
@@ -96,7 +100,11 @@ def localFileList():
 
 def createSettingsFile():
     with open('settings.cfg', 'w') as cfg:
-        cfg.write('[auth]\ngmail = alias@gmail.com\npassw = yourpassword\ndevid = 0000000000000000\n\n[app]\npkg = com.whatsapp\nsig = 38a0f7d505fe18fec64fbf343ecaaaf310dbd799\n\n[client]\npkg = com.google.android.gms\nsig = 38918a453d07199354f8b19af05ec6562ced5788\nver = 9877000')
+        cfg.write('[app]\npkg = com.whatsapp\nsig = 38a0f7d505fe18fec64fbf343ecaaaf310dbd799\n\n[client]\npkg = com.google.android.gms\nsig = 38918a453d07199354f8b19af05ec6562ced5788\nver = 9877000')
+
+def createAuthFile():
+    with open('auth.cfg', 'w') as cfg:
+        cfg.write('[auth]\ngmail = alias@gmail.com\npassw=\ndevid = 0000000000000000\n\n')
 
 def getSingleFile(data, asset):
     data = json.loads(data)
@@ -118,8 +126,11 @@ def getMultipleFiles(data, folder):
 
 def runMain(mode, asset, bID):
     global bearer
-    if os.path.isfile('settings.cfg') == False:
+    if not os.path.isfile('settings.cfg'):
         createSettingsFile()
+    if not os.path.exists('auth.cfg'):
+        createAuthFile()
+        quit("Please fill in your Google authentication details in auth.cfg")
     getConfigs()
     bearer = getGoogleDriveToken(getGoogleAccountTokenFromAuth())
     drives = gDriveFileMap()
