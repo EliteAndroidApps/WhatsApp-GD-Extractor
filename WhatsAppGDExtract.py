@@ -1,21 +1,34 @@
 #!/usr/bin/env python
-
+ 
 from configparser import ConfigParser
 import json
 import os
 import re
 import requests
 import sys
-
+ 
+import requests
+ 
+from pyportify.gpsoauth import google
+ 
 def getGoogleAccountTokenFromAuth():
-    payload = {'Email':gmail, 'Passwd':passw, 'app':client_pkg, 'client_sig':client_sig, 'parentAndroidId':devid}
+ 
+    b64_key_7_3_29 = (b"AAAAgMom/1a/v0lblO2Ubrt60J2gcuXSljGFQXgcyZWveWLEwo6prwgi3"
+                      b"iJIZdodyhKZQrNWp5nKJ3srRXcUW+F1BD3baEVGcmEgqaLZUNBjm057pK"
+                      b"RI16kB0YppeGx5qIQ5QjKzsR8ETQbKLNWgRY0QRNVz34kMJR3P/LgHax/"
+                      b"6rmf5AAAAAwEAAQ==")
+ 
+    android_key_7_3_29 = google.key_from_b64(b64_key_7_3_29)
+    encpass = google.signature(gmail, passw, android_key_7_3_29)
+    payload = {'Email':gmail, 'EncryptedPasswd':encpass, 'app':client_pkg, 'client_sig':client_sig, 'parentAndroidId':devid}
     request = requests.post('https://android.clients.google.com/auth', data=payload)
     token = re.search('Token=(.*?)\n', request.text)
     if token:
        return token.group(1)
     else:
        quit(request.text)
-
+ 
+ 
 def getGoogleDriveToken(token):
     payload = {'Token':token, 'app':pkg, 'client_sig':sig, 'device':devid, 'google_play_services_version':client_ver, 'service':'oauth2:https://www.googleapis.com/auth/drive.appdata https://www.googleapis.com/auth/drive.file', 'has_permission':'1'}
     request = requests.post('https://android.clients.google.com/auth', data=payload)
@@ -24,12 +37,12 @@ def getGoogleDriveToken(token):
        return token.group(1)
     else:
        quit(request.text)
-
+ 
 def rawGoogleDriveRequest(bearer, url):
     headers = {'Authorization': 'Bearer '+bearer}
     request = requests.get(url, headers=headers)
     return request.text
-
+ 
 def downloadFileGoogleDrive(bearer, url, local):
     if not os.path.exists(os.path.dirname(local)):
         os.makedirs(os.path.dirname(local))
@@ -43,7 +56,7 @@ def downloadFileGoogleDrive(bearer, url, local):
             for chunk in request.iter_content(1024):
                 asset.write(chunk)
     print('Downloaded: "'+local+'".')
-
+ 
 def gDriveFileMap():
     global bearer
     data = rawGoogleDriveRequest(bearer, 'https://www.googleapis.com/drive/v2/files')
@@ -58,7 +71,7 @@ def gDriveFileMap():
     if len(backups) == 0:
         quit('Unable to locate google drive file map for: '+pkg)
     return backups
-
+ 
 def getConfigs():
     global gmail, passw, devid, pkg, sig, client_pkg, client_sig, client_ver
     config = ConfigParser()
@@ -74,17 +87,17 @@ def getConfigs():
         client_ver = config.get('client', 'ver')
     except(ConfigParser.NoSectionError, ConfigParser.NoOptionError):
         quit('The "settings.cfg" file is missing or corrupt!')
-
+ 
 def jsonPrint(data):
     print(json.dumps(json.loads(data), indent=4, sort_keys=True))
-
+ 
 def localFileLog(md5):
     logfile = 'logs'+os.path.sep+'files.log'
     if not os.path.exists(os.path.dirname(logfile)):
         os.makedirs(os.path.dirname(logfile))
     with open(logfile, 'a') as log:
         log.write(md5+'\n')
-
+ 
 def localFileList():
     logfile = 'logs'+os.path.sep+'files.log'
     if os.path.isfile(logfile):
@@ -93,17 +106,17 @@ def localFileList():
     else:
         open(logfile, 'w')
         return localFileList()
-
+ 
 def createSettingsFile():
     with open('settings.cfg', 'w') as cfg:
         cfg.write('[auth]\ngmail = alias@gmail.com\npassw = yourpassword\ndevid = 0000000000000000\n\n[app]\npkg = com.whatsapp\nsig = 38a0f7d505fe18fec64fbf343ecaaaf310dbd799\n\n[client]\npkg = com.google.android.gms\nsig = 38918a453d07199354f8b19af05ec6562ced5788\nver = 9877000')
-
+ 
 def getSingleFile(data, asset):
     data = json.loads(data)
     for entries in data:
         if entries['f'] == asset:
             return entries['f'], entries['m'], entries['r'], entries['s']
-
+ 
 def getMultipleFiles(data, folder):
     files = localFileList()
     data = json.loads(data)
@@ -115,7 +128,7 @@ def getMultipleFiles(data, folder):
             else:
                 downloadFileGoogleDrive(bearer, 'https://www.googleapis.com/drive/v2/files/'+entries['r']+'?alt=media', local)
                 localFileLog(entries['m'])
-
+ 
 def runMain(mode, asset, bID):
     global bearer
     if os.path.isfile('settings.cfg') == False:
@@ -159,7 +172,7 @@ def runMain(mode, asset, bID):
                 print('Backup: '+str(i))
                 folder = 'WhatsApp-' + str(i)
             getMultipleFiles(drive[1], folder)
-
+ 
 def main():
     args = len(sys.argv)
     if  args < 2 or str(sys.argv[1]) == '-help' or str(sys.argv[1]) == 'help':
@@ -188,6 +201,6 @@ def main():
         runMain('pull', str(sys.argv[2]), bID)
     else:
         quit('\nUsage: python '+str(sys.argv[0])+' -help|-vers|-info|-list|-sync|-pull file [backupID]\n')
-
+ 
 if __name__ == "__main__":
     main()
