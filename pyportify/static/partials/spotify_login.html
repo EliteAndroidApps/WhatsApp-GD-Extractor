@@ -1,0 +1,31 @@
+<div class="card spotify">
+    <form ng-submit="spotifyLogin()">
+        <fieldset>
+            <div class="row">
+                <legend><img src="/img/s.png"/> Login to Spotify</legend>
+            </div>
+            <div class="row">
+                <div class="span3">
+                    <label>OAuth Token*</label>
+                    <input type="text" ng-model="loginData.oauthToken" required  placeholder="OAuth Token">
+                    <button type="submit" class="btn btn-success">Submit</button>
+                </div>
+                <div class="span5 pull-right">
+                    <div class="alert alert-success">
+                        <button type="button" class="close" data-dismiss="alert">&times;</button>
+                        <strong>Heads up!</strong> To get an OAuth Token:
+                        <ol>
+                            <li>Visit <a href="https://developer.spotify.com/web-api/console/get-playlists/" target="_blank">this page</a></li>
+                            <li>Click "Get OAuth Token"</li>
+                            <li>If the token is already there, clear it.  We want to make sure you have the proper permissions</li>
+                            <li>Check "playlist-read-private", "playlist-read-collaborative", and "user-library-read"</li>
+                            <li>Click "Request Token"</li>
+                            <li>Either login, or if you're already logged in click "Okay"</li>
+                            <li>Copy the token in the "OAuth Token" field</li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+        </fieldset>
+    </form>
+</div>
