@@ -4,15 +4,19 @@ Allows WhatsApp users on Android to extract their backed up WhatsApp data from G
 ###### BRANCH UPDATES:
 v1.0 - Initial release.  
 v1.1 - Added Python 3 support.  
+v2.0 - Fixed gDriveFileMap after Whatsapp q requirements update
+       Fixed downloadurl (the scrip is working again!)
+v2.5 - Added multithreading support
 
 
 ###### PREREQUISITES:
  1. O/S: Windows Vista, Windows 7, Windows 8, Windows 10, Mac OS X or Linux  
- 2. Python 2.x or 3.x - If not installed: https://www.python.org/downloads/  
+ 2. Python 3.x - If not installed: https://www.python.org/downloads/  
  3. Android device with WhatsApp installed and the Google Drive backup feature enabled  
  4. Google services device id (if you want to reduce the risk of being logged out of Google)  
      Search Google Play for "device id" for plenty of apps that can reveal this information  
  5. Google account login credentials (username and password)  
+ 6. Whatsapp cellphone number as shown in backup tab on google drive website.
 
 
 ###### INSTRUCTIONS:
@@ -30,3 +34,6 @@ v1.1 - Added Python 3 support.
 
 ###### CREDITS:
  AUTHOR: TripCode  
+
+###### CREDITS:
+ CONTRIBUTORS: DrDeath1122 from XDA for the multithreading backbone part
