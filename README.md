@@ -5,7 +5,7 @@ Allows WhatsApp users on Android to extract their backed up WhatsApp data from G
 v1.0 - Initial release.  
 v1.1 - Added Python 3 support.  
 v2.0 - Fixed gDriveFileMap after Whatsapp q requirements update
-       Fixed downloadurl (the scrip is working again!)    
+       Fixed downloadurl (the script is working again!)    
 v2.5 - Added multithreading support
 
 
