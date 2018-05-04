@@ -205,6 +205,8 @@ def getMultipleFiles(data, folder):
  
 def runMain(mode, asset, bID):
     global bearer
+    golbal exitFlag
+   
     if os.path.isfile('settings.cfg') == False:
         createSettingsFile()
     getConfigs()
@@ -241,6 +243,7 @@ def runMain(mode, asset, bID):
             localFileLog(m)
     elif mode == 'sync':
         for i, drive in enumerate(drives):
+            exitFlag = False
             folder = 'WhatsApp'
             if len(drives) > 1:
                 print('Backup: '+str(i))
