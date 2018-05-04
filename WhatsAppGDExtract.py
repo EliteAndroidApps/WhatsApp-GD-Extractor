@@ -154,8 +154,10 @@ def getMultipleFilesThread(bearer, entries_r, local, entries_m, threadName):
         if not os.path.exists(os.path.dirname(local)):
             try:
                 os.makedirs(os.path.dirname(local))
+            #Other thead was trying to create the same 'local'
             except (FileExistsError):
                 pass
+                
         if os.path.isfile(local):
             os.remove(local)
         headers = {'Authorization': 'Bearer '+bearer}
