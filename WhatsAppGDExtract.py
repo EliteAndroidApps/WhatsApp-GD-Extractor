@@ -1,6 +1,6 @@
 #!/usr/bin/env python
  
-from configparser import ConfigParser
+from configparser import RawConfigParser
 import json
 import os
 import re
@@ -83,7 +83,7 @@ def gDriveFileMap():
  
 def getConfigs():
     global gmail, passw, devid, pkg, sig, client_pkg, client_sig, client_ver, celnumbr
-    config = ConfigParser()
+    config = RawConfigParser()
     try:
         config.read('settings.cfg')
         gmail = config.get('auth', 'gmail')
