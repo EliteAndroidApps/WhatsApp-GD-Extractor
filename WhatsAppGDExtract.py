@@ -207,7 +207,7 @@ def getMultipleFiles(data, folder):
  
 def runMain(mode, asset, bID):
     global bearer
-    golbal exitFlag
+    global exitFlag
    
     if os.path.isfile('settings.cfg') == False:
         createSettingsFile()
