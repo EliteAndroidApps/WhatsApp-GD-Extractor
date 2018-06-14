@@ -1,6 +1,6 @@
 #!/usr/bin/env python
  
-import ConfigParser
+import configparser
 import json
 import os
 import re
@@ -83,7 +83,7 @@ def gDriveFileMap():
  
 def getConfigs():
     global gmail, passw, devid, pkg, sig, client_pkg, client_sig, client_ver, celnumbr
-    config = ConfigParser.RawConfigParser()
+    config = configparser.RawConfigParser()
     try:
         config.read('settings.cfg')
         gmail = config.get('auth', 'gmail')
@@ -95,7 +95,7 @@ def getConfigs():
         client_pkg = config.get('client', 'pkg')
         client_sig = config.get('client', 'sig')
         client_ver = config.get('client', 'ver')
-    except(ConfigParser.NoSectionError, ConfigParser.NoOptionError):
+    except(configparser.NoSectionError, configparser.NoOptionError):
         quit('The "settings.cfg" file is missing or corrupt!')
  
 def jsonPrint(data):
