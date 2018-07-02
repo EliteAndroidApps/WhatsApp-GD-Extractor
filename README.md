@@ -4,10 +4,10 @@ Allows WhatsApp users on Android to extract their backed up WhatsApp data from G
 ###### BRANCH UPDATES:
 v1.0 - Initial release.  
 v1.1 - Added Python 3 support.  
-v2.0 - Fixed gDriveFileMap after Whatsapp q requirements update
-       Fixed downloadurl (the script is working again!)    
-v2.5 - Added multithreading support
-
+v2.0 - Fixed gDriveFileMap after Whatsapp q requirements update.
+       Fixed downloadurl (the script is working again!).   
+v2.5 - Added multi-threading support.
+v2.6 - Better errors description, logging system deprecated.
 
 ###### PREREQUISITES:
  1. O/S: Windows Vista, Windows 7, Windows 8, Windows 10, Mac OS X or Linux  
@@ -36,4 +36,5 @@ v2.5 - Added multithreading support
  AUTHOR: TripCode  
 
 ###### CREDITS:
- CONTRIBUTORS: DrDeath1122 from XDA for the multithreading backbone part
+ CONTRIBUTORS: DrDeath1122 from XDA for the multi-threading backbone part,
+               YuriCosta for reverse engineering the new restore system

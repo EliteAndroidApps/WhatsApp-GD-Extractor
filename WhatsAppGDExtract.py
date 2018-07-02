@@ -71,14 +71,25 @@ def gDriveFileMap():
     data = gDriveFileMapRequest(bearer)
     jres = json.loads(data)
     backups = []
+    incomplete_backup_marker = False
+    if not('items' in jres):
+        quit('Unable to locate google drive file map for: '+pkg)
     for result in jres['items']:
         try:
             if result['title'] == 'gdrive_file_map':
                 backups.append((result['description'], rawGoogleDriveRequest(bearer, 'https://www.googleapis.com/drive/v2/files/'+result['id']+'?alt=media')))
+            elif 'invisible' in result['title']:
+                for p in result['properties']:
+                    if (p['key'] == 'incomplete_backup_marker') and (p['value'] == 'true'):
+                        incomplete_backup_marker = True
+                        
         except:
             pass
     if len(backups) == 0:
-        quit('Unable to locate google drive file map for: '+pkg)
+        if incomplete_backup_marker:
+            quit(pkg + ' has an incomplete backup, it may be corrupted!\nMake sure the backup is ok and try again')
+        else:
+            quit(pkg + ' has no backup filemap, make sure the backup is ok')
     return backups
  
 def getConfigs():
@@ -100,22 +111,6 @@ def getConfigs():
  
 def jsonPrint(data):
     print(json.dumps(json.loads(data), indent=4, sort_keys=True))
- 
-def localFileLog(md5):
-    logfile = 'logs'+os.path.sep+'files.log'
-    if not os.path.exists(os.path.dirname(logfile)):
-        os.makedirs(os.path.dirname(logfile))
-    with open(logfile, 'a') as log:
-        log.write(md5+'\n')
- 
-def localFileList():
-    logfile = 'logs'+os.path.sep+'files.log'
-    if os.path.isfile(logfile):
-        flist = open(logfile, 'r')
-        return [line.split('\n') for line in flist.readlines()]
-    else:
-        open(logfile, 'w')
-        return localFileList()
  
 def createSettingsFile():
     with open('settings.cfg', 'w') as cfg:
@@ -144,17 +139,18 @@ def process_data(threadName, q):
         if not workQueue.empty():
             data = q.get()
             queueLock.release()
-            getMultipleFilesThread(data['bearer'], data['entries_r'], data['local'], data['entries_m'], threadName)
+            getMultipleFilesThread(data['bearer'], data['entries_r'], data['local'], threadName)
         else:
             queueLock.release()
         time.sleep(1)
 
-def getMultipleFilesThread(bearer, entries_r, local, entries_m, threadName):
+def getMultipleFilesThread(bearer, entries_r, local, threadName):
         url = 'https://www.googleapis.com/drive/v2/files/'+entries_r+'?alt=media'
-        if not os.path.exists(os.path.dirname(local)):
+        folder_t = os.path.dirname(local)
+        if not os.path.exists(folder_t):
             try:
-                os.makedirs(os.path.dirname(local))
-            #Other thead was trying to create the same 'local'
+                os.makedirs(folder_t)
+            #Other thead was trying to create the same 'folder'
             except (FileExistsError):
                 pass
                 
@@ -168,11 +164,7 @@ def getMultipleFilesThread(bearer, entries_r, local, entries_m, threadName):
                 for chunk in request.iter_content(1024):
                     asset.write(chunk)
         print(threadName + '=> Downloaded: "'+local+'".')
-        logfile = 'logs'+os.path.sep+'files.log'
-        if not os.path.exists(os.path.dirname(logfile)):
-            os.makedirs(os.path.dirname(logfile))
-        with open(logfile, 'a') as log:
-            log.write(entries_m+'\n')
+
 
 queueLock = threading.Lock()
 workQueue = queue.Queue(9999999)
@@ -187,16 +179,14 @@ def getMultipleFiles(data, folder):
         thread.start()
         threads.append(thread)
         threadID += 1
-    files = localFileList()
     data = json.loads(data)
     queueLock.acquire()
     for entries in data:
-        if any(entries['m'] in lists for lists in files) == False or 'database' in entries['f'].lower():
-            local = folder+os.path.sep+entries['f'].replace("/", os.path.sep)
-            if os.path.isfile(local) and 'database' not in local.lower():
-                quit('Skipped: "'+local+'".')
-            else:
-                workQueue.put({'bearer':bearer, 'entries_r':entries['r'], 'local':local, 'entries_m':entries['m']})
+        local = folder+os.path.sep+entries['f'].replace("/", os.path.sep)
+        if os.path.isfile(local) and 'database' not in local.lower():
+            print('Skipped: "'+local+'".')
+        else:
+            workQueue.put({'bearer':bearer, 'entries_r':entries['r'], 'local':local})
     queueLock.release()
     while not workQueue.empty():
         pass
@@ -242,7 +232,6 @@ def runMain(mode, asset, bID):
             quit('Skipped: "'+local+'".')
         else:
             downloadFileGoogleDrive(bearer, 'https://www.googleapis.com/drive/v2/files/'+r+'?alt=media', local)
-            localFileLog(m)
     elif mode == 'sync':
         for i, drive in enumerate(drives):
             exitFlag = False
