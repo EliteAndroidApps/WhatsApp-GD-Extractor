@@ -10,6 +10,7 @@ import queue
 import threading
 import time
 from pkgxtra.gpsoauth import google
+
 exitFlag = False
  
  
@@ -42,13 +43,13 @@ def getGoogleDriveToken(token):
        quit(request.text)
  
 def rawGoogleDriveRequest(bearer, url):
-    headers = {'Authorization': 'Bearer '+bearer}
+    headers = {'Authorization': 'Bearer '+bearer, 'User-Agent': 'WhatsApp/2.19.291 Android/5.1.1 Device/samsung-SM-N950W', 'Content-Type': 'application/json; charset=UTF-8', 'Connection': 'Keep-Alive', 'Accept-Encoding': 'gzip'}
     request = requests.get(url, headers=headers)
     return request.text
     
 def gDriveFileMapRequest(bearer):
-    header = {'Authorization': 'Bearer '+bearer}
-    url = "https://www.googleapis.com/drive/v2/files?mode=restore&spaces=appDataFolder&maxResults=1000&fields=items(description%2Cid%2CfileSize%2Ctitle%2Cmd5Checksum%2CmimeType%2CmodifiedDate%2Cparents(id)%2Cproperties(key%2Cvalue))%2CnextPageToken&q=title%20%3D%20'"+celnumbr+"-invisible'%20or%20title%20%3D%20'gdrive_file_map'%20or%20title%20%3D%20'Databases%2Fmsgstore.db.crypt12'%20or%20title%20%3D%20'Databases%2Fmsgstore.db.crypt11'%20or%20title%20%3D%20'Databases%2Fmsgstore.db.crypt10'%20or%20title%20%3D%20'Databases%2Fmsgstore.db.crypt9'%20or%20title%20%3D%20'Databases%2Fmsgstore.db.crypt8'"
+    header = {'Authorization': 'Bearer ' + bearer, 'User-Agent': 'WhatsApp/2.19.291 Android/5.1.1 Device/samsung-SM-N950W', 'Content-Type': 'application/json; charset=UTF-8', 'Connection': 'Keep-Alive', 'Accept-Encoding': 'gzip'}
+    url = "https://backup.googleapis.com/v1/clients/wa/backups/{}/files?pageSize=5000".format(celnumbr)
     request = requests.get(url, headers=header)
     return request.text
  
@@ -70,27 +71,29 @@ def gDriveFileMap():
     global bearer
     data = gDriveFileMapRequest(bearer)
     jres = json.loads(data)
-    backups = []
+    
     incomplete_backup_marker = False
-    if not('items' in jres):
+    description_url = 'https://backup.googleapis.com/v1/clients/wa/backups/'+celnumbr
+    
+    description = rawGoogleDriveRequest(bearer, description_url)
+    if not('files' in jres):
         quit('Unable to locate google drive file map for: '+pkg)
-    for result in jres['items']:
-        try:
-            if result['title'] == 'gdrive_file_map':
-                backups.append((result['description'], rawGoogleDriveRequest(bearer, 'https://www.googleapis.com/drive/v2/files/'+result['id']+'?alt=media')))
-            elif 'invisible' in result['title']:
-                for p in result['properties']:
-                    if (p['key'] == 'incomplete_backup_marker') and (p['value'] == 'true'):
-                        incomplete_backup_marker = True
-                        
-        except:
-            pass
-    if len(backups) == 0:
+        
+    try:
+        if 'invisible' in description['title']:
+            for p in result['properties']:
+                if (p['key'] == 'incomplete_backup_marker') and (p['value'] == 'true'):
+                    incomplete_backup_marker = True                   
+    except:
+        pass
+    if len(jres) == 0:
         if incomplete_backup_marker:
             quit(pkg + ' has an incomplete backup, it may be corrupted!\nMake sure the backup is ok and try again')
         else:
             quit(pkg + ' has no backup filemap, make sure the backup is ok')
-    return backups
+             
+            
+    return description, jres['files']
  
 def getConfigs():
     global gmail, passw, devid, pkg, sig, client_pkg, client_sig, client_ver, celnumbr
@@ -139,13 +142,13 @@ def process_data(threadName, q):
         if not workQueue.empty():
             data = q.get()
             queueLock.release()
-            getMultipleFilesThread(data['bearer'], data['entries_r'], data['local'], threadName)
+            getMultipleFilesThread(data['bearer'], data['entries_r'], data['local'], threadName, data['progress'], data['max'])
         else:
             queueLock.release()
         time.sleep(1)
 
-def getMultipleFilesThread(bearer, entries_r, local, threadName):
-        url = 'https://www.googleapis.com/drive/v2/files/'+entries_r+'?alt=media'
+def getMultipleFilesThread(bearer, entries_r, local, threadName, progress, max):
+        url = entries_r
         folder_t = os.path.dirname(local)
         if not os.path.exists(folder_t):
             try:
@@ -156,14 +159,14 @@ def getMultipleFilesThread(bearer, entries_r, local, threadName):
                 
         if os.path.isfile(local):
             os.remove(local)
-        headers = {'Authorization': 'Bearer '+bearer}
+        headers = {'Authorization': 'Bearer '+bearer, 'User-Agent': 'WhatsApp/2.19.291 Android/5.1.1 Device/samsung-SM-N950W', 'Content-Type': 'application/json; charset=UTF-8', 'Connection': 'Keep-Alive', 'Accept-Encoding': 'gzip'}
         request = requests.get(url, headers=headers, stream=True)
         request.raw.decode_content = True
         if request.status_code == 200:
             with open(local, 'wb') as asset:
                 for chunk in request.iter_content(1024):
                     asset.write(chunk)
-        print(threadName + '=> Downloaded: "'+local+'".')
+        print(threadName + '=> Downloaded: "'+local+'".\nPogress: {:3.5f}%'.format(progress*100/max))
 
 
 queueLock = threading.Lock()
@@ -179,14 +182,20 @@ def getMultipleFiles(data, folder):
         thread.start()
         threads.append(thread)
         threadID += 1
-    data = json.loads(data)
+        
+    progress = 1
+    max = len(data)
+    url_file = 'https://backup.googleapis.com/v1/'
     queueLock.acquire()
+    
     for entries in data:
-        local = folder+os.path.sep+entries['f'].replace("/", os.path.sep)
+        name = entries['name']
+        local = folder+os.path.sep+name.split('files/')[1].replace("/", os.path.sep)
         if os.path.isfile(local) and 'database' not in local.lower():
             print('Skipped: "'+local+'".')
         else:
-            workQueue.put({'bearer':bearer, 'entries_r':entries['r'], 'local':local})
+            workQueue.put({'bearer':bearer, 'entries_r':url_file+name+'?alt=media', 'local':local, 'progress':progress, 'max':max})
+            progress += 1
     queueLock.release()
     while not workQueue.empty():
         pass
@@ -203,43 +212,19 @@ def runMain(mode, asset, bID):
         createSettingsFile()
     getConfigs()
     bearer = getGoogleDriveToken(getGoogleAccountTokenFromAuth())
-    drives = gDriveFileMap()
+    description, files = gDriveFileMap()
     if mode == 'info':
-        for i, drive in enumerate(drives):
-            if len(drives) > 1:
-                print("Backup: "+str(i))
-            jsonPrint(drive[0])
+        print(description)
     elif mode == 'list':
-        for i, drive in enumerate(drives):
-            if len(drives) > 1:
+        for i, drive in enumerate(files):
+            if len(files) > 1:
                 print("Backup: "+str(i))
             jsonPrint(drive[1])
-    elif mode == 'pull':
-        try:
-            drive = drives[bID]
-        except IndexError:
-            quit("Invalid backup ID: " + str(bID))
-        target = getSingleFile(drive[1], asset)
-        try:
-            f = target[0]
-            m = target[1]
-            r = target[2]
-            s = target[3]
-        except TypeError:
-            quit('Unable to locate: "'+asset+'".')
-        local = 'WhatsApp'+os.path.sep+f.replace("/", os.path.sep)
-        if os.path.isfile(local) and 'database' not in local.lower():
-            quit('Skipped: "'+local+'".')
-        else:
-            downloadFileGoogleDrive(bearer, 'https://www.googleapis.com/drive/v2/files/'+r+'?alt=media', local)
+            
     elif mode == 'sync':
-        for i, drive in enumerate(drives):
-            exitFlag = False
-            folder = 'WhatsApp'
-            if len(drives) > 1:
-                print('Backup: '+str(i))
-                folder = 'WhatsApp-' + str(i)
-            getMultipleFiles(drive[1], folder)
+        exitFlag = False
+        folder = 'WhatsApp'
+        getMultipleFiles(files, folder)
  
 def main():
     args = len(sys.argv)
@@ -250,7 +235,6 @@ def main():
         print('python '+str(sys.argv[0])+' -info (google drive app settings)')
         print('python '+str(sys.argv[0])+' -list (list all availabe files)')
         print('python '+str(sys.argv[0])+' -sync (sync all files locally)')
-        print('python '+str(sys.argv[0])+' -pull "Databases/msgstore.db.crypt12" [backupID] (download)\n')
     elif str(sys.argv[1]) == '-info' or str(sys.argv[1]) == 'info':
         runMain('info', 'settings', 0)
     elif str(sys.argv[1]) == '-list' or str(sys.argv[1]) == 'list':
@@ -261,12 +245,6 @@ def main():
         print('\nWhatsAppGDExtract Version 1.1 Copyright (C) 2016 by TripCode\n')
     elif args < 3:
         quit('\nUsage: python '+str(sys.argv[0])+' -help|-vers|-info|-list|-sync|-pull file [backupID]\n')
-    elif str(sys.argv[1]) == '-pull' or str(sys.argv[1]) == 'pull':
-        try:
-            bID = int(sys.argv[3])
-        except (IndexError, ValueError):
-            bID = 0
-        runMain('pull', str(sys.argv[2]), bID)
     else:
         quit('\nUsage: python '+str(sys.argv[0])+' -help|-vers|-info|-list|-sync|-pull file [backupID]\n')
  
