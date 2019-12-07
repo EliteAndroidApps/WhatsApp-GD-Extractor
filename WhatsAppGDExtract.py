@@ -47,9 +47,9 @@ def rawGoogleDriveRequest(bearer, url):
     request = requests.get(url, headers=headers)
     return request.text
     
-def gDriveFileMapRequest(bearer):
+def gDriveFileMapRequest(bearer, nextPageToken):
     header = {'Authorization': 'Bearer ' + bearer, 'User-Agent': 'WhatsApp/2.19.291 Android/5.1.1 Device/samsung-SM-N950W', 'Content-Type': 'application/json; charset=UTF-8', 'Connection': 'Keep-Alive', 'Accept-Encoding': 'gzip'}
-    url = "https://backup.googleapis.com/v1/clients/wa/backups/{}/files?pageSize=5000".format(celnumbr)
+    url = "https://backup.googleapis.com/v1/clients/wa/backups/{}/files?pageToken={}&pageSize=5000".format(celnumbr, nextPageToken)
     request = requests.get(url, headers=header)
     return request.text
  
@@ -67,14 +67,14 @@ def downloadFileGoogleDrive(bearer, url, local):
                 asset.write(chunk)
     print('Downloaded: "'+local+'".')
  
-def gDriveFileMap():
+def gDriveFileMap(nextPageToken):
     global bearer
-    data = gDriveFileMapRequest(bearer)
+    data = gDriveFileMapRequest(bearer, nextPageToken)
     jres = json.loads(data)
     
     incomplete_backup_marker = False
     description_url = 'https://backup.googleapis.com/v1/clients/wa/backups/'+celnumbr
-    
+
     description = rawGoogleDriveRequest(bearer, description_url)
     if not('files' in jres):
         quit('Unable to locate google drive file map for: '+pkg)
@@ -91,9 +91,12 @@ def gDriveFileMap():
             quit(pkg + ' has an incomplete backup, it may be corrupted!\nMake sure the backup is ok and try again')
         else:
             quit(pkg + ' has no backup filemap, make sure the backup is ok')
-             
-            
-    return description, jres['files']
+    files = jres['files']
+    if 'nextPageToken' in jres.keys():
+     descriptionOnThisPage, filesOnThisPage = gDriveFileMap(jres['nextPageToken'])
+     description += descriptionOnThisPage
+     files += filesOnThisPage
+    return description, files
  
 def getConfigs():
     global gmail, passw, devid, pkg, sig, client_pkg, client_sig, client_ver, celnumbr
@@ -212,14 +215,14 @@ def runMain(mode, asset, bID):
         createSettingsFile()
     getConfigs()
     bearer = getGoogleDriveToken(getGoogleAccountTokenFromAuth())
-    description, files = gDriveFileMap()
+    description, files = gDriveFileMap("")
     if mode == 'info':
         print(description)
     elif mode == 'list':
         for i, drive in enumerate(files):
             if len(files) > 1:
                 print("Backup: "+str(i))
-            jsonPrint(drive[1])
+            print('/'.join(drive['name'].split('/')[5:]))
             
     elif mode == 'sync':
         exitFlag = False
