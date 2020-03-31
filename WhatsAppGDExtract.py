@@ -36,11 +36,12 @@ def getGoogleAccountTokenFromAuth():
 def getGoogleDriveToken(token):
     payload = {'Token':token, 'app':pkg, 'client_sig':sig, 'device':devid, 'google_play_services_version':client_ver, 'service':'oauth2:https://www.googleapis.com/auth/drive.appdata https://www.googleapis.com/auth/drive.file', 'has_permission':'1'}
     request = requests.post('https://android.clients.google.com/auth', data=payload)
-    token = re.search('Auth=(.*?)\n', request.text)
+    answer = request.text if request.text[-1] == '\n' else "%s\n" % request.text
+    token = re.search('Auth=(.*?)\n', answer)
     if token:
        return token.group(1)
     else:
-       quit(request.text)
+       quit(answer)
  
 def rawGoogleDriveRequest(bearer, url):
     headers = {'Authorization': 'Bearer '+bearer, 'User-Agent': 'WhatsApp/2.19.291 Android/5.1.1 Device/samsung-SM-N950W', 'Content-Type': 'application/json; charset=UTF-8', 'Connection': 'Keep-Alive', 'Accept-Encoding': 'gzip'}
