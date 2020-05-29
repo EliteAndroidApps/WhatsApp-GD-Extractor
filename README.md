@@ -30,6 +30,8 @@ v2.6 - Better errors description, logging system deprecated.
 ###### TROUBLESHOOTING:
  1. Check you have the required imports installed (configparser and requests).  
      I.E.: pip install configparser requests  
+ 2. If you have `Error:Need Browser`, go to this url to solve the issue:
+     [https://accounts.google.com/b/0/DisplayUnlockCaptcha]
 
 
 ###### CREDITS:
