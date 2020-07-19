@@ -9,7 +9,11 @@ import sys
 import queue
 import threading
 import time
-from pkgxtra.gpsoauth import google
+
+try:
+    from gpsoauth import google
+except ImportError:
+    from pkgxtra.gpsoauth import google
 
 exitFlag = False
  
