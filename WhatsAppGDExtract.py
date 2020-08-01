@@ -9,7 +9,7 @@ import sys
 import queue
 import threading
 import time
-
+from getpass import getpass
 try:
     from gpsoauth import google
 except ImportError:
@@ -103,13 +103,19 @@ def gDriveFileMap(nextPageToken):
      files += filesOnThisPage
     return description, files
  
-def getConfigs():
+def getConfigs(askpassword=False):
     global gmail, passw, devid, pkg, sig, client_pkg, client_sig, client_ver, celnumbr
     config = configparser.RawConfigParser()
     try:
         config.read('settings.cfg')
         gmail = config.get('auth', 'gmail')
-        passw = config.get('auth', 'passw')
+        if askpassword:
+            try:
+                passw = getpass("Enter your password for {}: ".format(gmail))
+            except KeyboardInterrupt:
+               quit('\nCancelled!')
+        else:
+            passw = config.get('auth', 'passw')
         devid = config.get('auth', 'devid')
         celnumbr = config.get('auth', 'celnumbr')
         pkg = config.get('app', 'pkg')
@@ -212,13 +218,13 @@ def getMultipleFiles(data, folder):
         t.join()
     print ("File List Downloaded")
  
-def runMain(mode, asset, bID):
+def runMain(mode, asset, args):
     global bearer
     global exitFlag
    
     if os.path.isfile('settings.cfg') == False:
         createSettingsFile()
-    getConfigs()
+    getConfigs('-p' in args)
     bearer = getGoogleDriveToken(getGoogleAccountTokenFromAuth())
     description, files = gDriveFileMap("")
     if mode == 'info':
@@ -236,25 +242,25 @@ def runMain(mode, asset, bID):
  
 def main():
     args = len(sys.argv)
+    usage = '\nUsage: python '+str(sys.argv[0])+' -help|-vers|-info|-list|-sync [-p]\n'
     if  args < 2 or str(sys.argv[1]) == '-help' or str(sys.argv[1]) == 'help':
-        print('\nUsage: '+str(sys.argv[0])+' -help|-vers|-info|-list|-sync|-pull file [backupID]\n\nExamples:\n')
+        print(usage + '\nExamples:\n')
         print('python '+str(sys.argv[0])+' -help (this help screen)')
         print('python '+str(sys.argv[0])+' -vers (version information)')
         print('python '+str(sys.argv[0])+' -info (google drive app settings)')
         print('python '+str(sys.argv[0])+' -list (list all availabe files)')
         print('python '+str(sys.argv[0])+' -sync (sync all files locally)')
+        print('\nYou can add -p flag to ask for password instead of using from settings.cfg')
     elif str(sys.argv[1]) == '-info' or str(sys.argv[1]) == 'info':
-        runMain('info', 'settings', 0)
+        runMain('info', 'settings', sys.argv)
     elif str(sys.argv[1]) == '-list' or str(sys.argv[1]) == 'list':
-        runMain('list', 'all', 0)
+        runMain('list', 'all', sys.argv)
     elif str(sys.argv[1]) == '-sync' or str(sys.argv[1]) == 'sync':
-        runMain('sync', 'all', 0)
+        runMain('sync', 'all', sys.argv)
     elif str(sys.argv[1]) == '-vers' or str(sys.argv[1]) == 'vers':
-        print('\nWhatsAppGDExtract Version 1.1 Copyright (C) 2016 by TripCode\n')
-    elif args < 3:
-        quit('\nUsage: python '+str(sys.argv[0])+' -help|-vers|-info|-list|-sync|-pull file [backupID]\n')
+        print('\nWhatsAppGDExtract Version 1.2 Copyright (C) 2016 by TripCode\n')
     else:
-        quit('\nUsage: python '+str(sys.argv[0])+' -help|-vers|-info|-list|-sync|-pull file [backupID]\n')
+        quit(usage)
  
 if __name__ == "__main__":
     main()
