@@ -20,12 +20,13 @@ v2.6 - Better errors description, logging system deprecated.
 
 
 ###### INSTRUCTIONS:
- 1. Extract "WhatsApp-GD-Extractor-master.zip".  
- 2. Edit the [auth] section in "settings.cfg".  
- 3. Run python WhatsAppGDExtract.py from your command console.  
- 4. Read the usage examples that are displayed.  
- 5. Run any of the examples.  
- 
+ 1. Extract "WhatsApp-GD-Extractor-master.zip".
+ 2. Install dependencies `pip install -r requirements.txt` (or using your distribution package manager)
+ 3. Edit the [auth] section in "settings.cfg".
+ 4. Run python WhatsAppGDExtract.py from your command console.
+ 5. Read the usage examples that are displayed.
+ 6. Run any of the examples.
+
 
 ###### TROUBLESHOOTING:
  1. Check you have the required imports installed (configparser and requests).  

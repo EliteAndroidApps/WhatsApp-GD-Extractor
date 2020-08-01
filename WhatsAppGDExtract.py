@@ -10,7 +10,10 @@ import queue
 import threading
 import time
 from getpass import getpass
-from pkgxtra.gpsoauth import google
+try:
+    from gpsoauth import google
+except ImportError:
+    from pkgxtra.gpsoauth import google
 
 exitFlag = False
  
