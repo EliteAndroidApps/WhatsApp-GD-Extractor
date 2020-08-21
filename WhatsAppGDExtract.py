@@ -11,6 +11,8 @@ import threading
 import time
 import requests
 from getpass import getpass
+import requests
+
 try:
     from gpsoauth import google
 except ImportError:
@@ -80,7 +82,7 @@ def gDriveFileMapRequest(bearer, nextPageToken):
         'Authorization': 'Bearer ' + bearer,
         'User-Agent': 'WhatsApp/2.19.291 Android/5.1.1 Device/samsung-SM-N950W',
         'Content-Type': 'application/json; charset=UTF-8',
-        'Connection': 'Keep-Alive', 'Accept-Encoding': 'gzip'
+
     }
     url = "https://backup.googleapis.com/v1/clients/wa/backups/{}/files?pageToken={}&pageSize=5000".format(celnumbr, nextPageToken)
     request = requests.get(url, headers=header)
