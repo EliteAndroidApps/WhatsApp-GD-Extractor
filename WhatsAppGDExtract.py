@@ -1,3 +1,4 @@
+  
 #!/usr/bin/env python
 
 import configparser
@@ -8,6 +9,7 @@ import sys
 import queue
 import threading
 import time
+import requests
 from getpass import getpass
 import requests
 
@@ -80,8 +82,7 @@ def gDriveFileMapRequest(bearer, nextPageToken):
         'Authorization': 'Bearer ' + bearer,
         'User-Agent': 'WhatsApp/2.19.291 Android/5.1.1 Device/samsung-SM-N950W',
         'Content-Type': 'application/json; charset=UTF-8',
-        'Connection': 'Keep-Alive',
-        'Accept-Encoding': 'gzip'
+
     }
     url = "https://backup.googleapis.com/v1/clients/wa/backups/{}/files?pageToken={}&pageSize=5000".format(celnumbr, nextPageToken)
     request = requests.get(url, headers=header)
@@ -106,25 +107,14 @@ def gDriveFileMap(nextPageToken):
     data = gDriveFileMapRequest(bearer, nextPageToken)
     jres = json.loads(data)
 
-    incomplete_backup_marker = False
     description_url = 'https://backup.googleapis.com/v1/clients/wa/backups/'+celnumbr
 
     description = rawGoogleDriveRequest(bearer, description_url)
     if not 'files' in jres:
         quit('Unable to locate google drive file map for: '+pkg)
 
-    try:
-        if 'invisible' in description['title']:
-            for p in result['properties']:
-                if (p['key'] == 'incomplete_backup_marker') and (p['value'] == 'true'):
-                    incomplete_backup_marker = True
-    except:
-        pass
     if len(jres) == 0:
-        if incomplete_backup_marker:
-            quit(pkg + ' has an incomplete backup, it may be corrupted!\nMake sure the backup is ok and try again')
-        else:
-            quit(pkg + ' has no backup filemap, make sure the backup is ok')
+        quit(pkg + ' has no backup filemap, make sure the backup is ok')
     files = jres['files']
     if 'nextPageToken' in jres.keys():
         descriptionOnThisPage, filesOnThisPage = gDriveFileMap(jres['nextPageToken'])
