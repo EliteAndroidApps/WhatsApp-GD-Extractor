@@ -217,7 +217,7 @@ def main(args):
         print("{} files ({})".format(num_files, human_size(total_size)))
 
     elif args[1] == "sync":
-        with open("md5sum.txt", "w", buffering=1) as cksums:
+        with open("md5sum.txt", "w", encoding="utf-8", buffering=1) as cksums:
             for backup in backups:
                 print("Backup {} ({}):".format(
                     backup["name"],
