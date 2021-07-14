@@ -219,12 +219,16 @@ def main(args):
     elif args[1] == "sync":
         with open("md5sum.txt", "w", encoding="utf-8", buffering=1) as cksums:
             for backup in backups:
-                print("Backup {} ({}):".format(
-                    backup["name"],
-                    human_size(int(backup["sizeBytes"])),
-                ))
+                try:
+                    print("Backup {} ({}):".format(
+                        backup["name"],
+                        human_size(int(backup["sizeBytes"])),
+                    ))
+                except:
+                    print("Corrupted/Incomplete Backup!");
+                    continue
 
-                wa_backup.fetch_all(backup, cksums)
+                    wa_backup.fetch_all(backup, cksums)
 
 if __name__ == "__main__":
     main(sys.argv)
