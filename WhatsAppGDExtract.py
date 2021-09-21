@@ -233,11 +233,10 @@ def main(args):
                         backup["name"],
                         human_size(int(backup["sizeBytes"])),
                     ))
+                    wa_backup.fetch_all(backup, cksums)
                 except:
                     print("Corrupted/Incomplete Backup!");
                     continue
-
-                wa_backup.fetch_all(backup, cksums)
 
 if __name__ == "__main__":
     main(sys.argv)
