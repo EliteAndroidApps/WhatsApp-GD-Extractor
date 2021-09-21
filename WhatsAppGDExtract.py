@@ -72,13 +72,22 @@ class WaBackup:
         )
 
     def get(self, path, params=None, **kwargs):
-        response = requests.get(
-            "https://backup.googleapis.com/v1/{}".format(path),
-            headers={"Authorization": "Bearer {}".format(self.auth["Auth"])},
-            params=params,
-            **kwargs,
-        )
-        response.raise_for_status()
+        try:
+            response = requests.get(
+                "https://backup.googleapis.com/v1/{}".format(path),
+                headers={"Authorization": "Bearer {}".format(self.auth["Auth"])},
+                params=params,
+                **kwargs,
+            )
+            response.raise_for_status()
+        except requests.exceptions.HTTPError as errh:
+            print ("\n\nHttp Error:",errh)
+        except requests.exceptions.ConnectionError as errc:
+            print ("\n\nError Connecting:",errc)
+        except requests.exceptions.Timeout as errt:
+            print ("\n\nTimeout Error:",errt)
+        except requests.exceptions.RequestException as err:
+            print ("\n\nOOps: Something Else",err)
         return response
 
     def get_page(self, path, page_token=None):
@@ -228,7 +237,7 @@ def main(args):
                     print("Corrupted/Incomplete Backup!");
                     continue
 
-                    wa_backup.fetch_all(backup, cksums)
+                wa_backup.fetch_all(backup, cksums)
 
 if __name__ == "__main__":
     main(sys.argv)
