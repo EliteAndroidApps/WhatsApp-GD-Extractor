@@ -189,7 +189,7 @@ def backup_info(backup):
     metadata = json.loads(backup["metadata"])
     for size in "backupSize", "chatdbSize", "mediaSize", "videoSize":
         metadata[size] = human_size(int(metadata[size]))
-    print("Backup {} Size:({}) Upload Time:".format(backup["name"].split("/")[-1], metadata["backupSize"]), backup["updateTime"])
+    print("Backup {} Size:({}) Upload Time:{}".format(backup["name"].split("/")[-1], metadata["backupSize"]), backup["updateTime"])
     print("  WhatsApp version  : {}".format(metadata["versionOfAppWhenBackup"]))
     try:
         print("  Password protected: {}".format(metadata["passwordProtectedBackupEnabled"]))
