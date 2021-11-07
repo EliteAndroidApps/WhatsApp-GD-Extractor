@@ -20,6 +20,7 @@ import json
 import os
 import requests
 import sys
+import traceback
 
 def human_size(size):
     for s in ["B", "kiB", "MiB", "GiB", "TiB", "PiB", "EiB", "ZiB", "YiB"]:
@@ -188,19 +189,16 @@ def backup_info(backup):
     metadata = json.loads(backup["metadata"])
     for size in "backupSize", "chatdbSize", "mediaSize", "videoSize":
         metadata[size] = human_size(int(metadata[size]))
-    return dedent("""
-        Backup {name} ({backupSize}):
-            WhatsApp version: {versionOfAppWhenBackup}
-            Password protected: {passwordProtectedBackupEnabled}
-            Messages: {numOfMessages} ({chatdbSize})
-            Media files: {numOfMediaFiles} ({mediaSize})
-            Photos: {numOfPhotos}
-            Videos: included={includeVideosInBackup} ({videoSize})
-        """.format(
-            name=backup["name"].split("/")[-1],
-            **metadata
-        )
-    )
+    print("Backup {} Size:({}) Upload Time:".format(backup["name"].split("/")[-1], metadata["backupSize"]), backup["updateTime"])
+    print("  WhatsApp version  : {}".format(metadata["versionOfAppWhenBackup"]))
+    try:
+        print("  Password protected: {}".format(metadata["passwordProtectedBackupEnabled"]))
+    except:
+        pass
+    print("  Messages          : {} ({})".format(metadata["numOfMessages"], metadata["chatdbSize"]))
+    print("  Media files       : {} ({})".format(metadata["numOfMediaFiles"], metadata["mediaSize"]))
+    print("  Photos            : {}".format(metadata["numOfPhotos"]))
+    print("  Videos            : included={} ({})".format(metadata["includeVideosInBackup"], metadata["videoSize"]))
 
 def main(args):
     if len(args) != 2 or args[1] not in ("info", "list", "sync"):
@@ -213,42 +211,48 @@ def main(args):
 
     if args[1] == "info":
         for backup in backups:
-            print(backup_info(backup))
+            answer = input("\nDo you want {}? [y/n] : ".format(backup["name"].split("/")[-1]))
+            if not answer or answer[0].lower() != 'y':
+                continue
+            backup_info(backup)
 
     elif args[1] == "list":
-        num_files = 0
-        total_size = 0
         for backup in backups:
+            answer = input("\nDo you want {}? [y/n] : ".format(backup["name"].split("/")[-1]))
+            if not answer or answer[0].lower() != 'y':
+                continue
+            num_files = 0
+            total_size = 0
             for file in wa_backup.backup_files(backup):
                 try:
                     num_files += 1
                     total_size += int(file["sizeBytes"])
                     print(os.path.sep.join(file["name"].split("/")[3:]))
                 except:
-                    print("\n#####\n\nWarning: Unexpected error in file: {}\n\nDetail: {}\n\n#####\n".format(
+                    print("\n#####\n\nWarning: Unexpected error in file: {}\n\nDetail: {}\n\nException: {}\n\n#####\n".format(
                         os.path.sep.join(file["name"].split("/")[3:]),
-                        file
+                        json.dumps(file, indent=4, sort_keys=True),
+                        traceback.format_exc()
                     ))
                     input("Press the <Enter> key to continue...")
                     continue
-        print("{} files ({})".format(num_files, human_size(total_size)))
+            print("{} files ({})".format(num_files, human_size(total_size)))
 
     elif args[1] == "sync":
         with open("md5sum.txt", "w", encoding="utf-8", buffering=1) as cksums:
             for backup in backups:
                 try:
-                    answer = input("Do you want {}? [y/n] : ".format(backup["name"]))
+                    answer = input("\nDo you want {}? [y/n] : ".format(backup["name"].split("/")[-1]))
                     if not answer or answer[0].lower() != 'y':
                         continue
-                    print("Backup {} ({}):".format(
-                        backup["name"],
-                        human_size(int(backup["sizeBytes"])),
-                    ))
+                    print("Backup Size:{} Upload Time: {}".format(human_size(int(backup["sizeBytes"])), backup["updateTime"]))
                     wa_backup.fetch_all(backup, cksums)
-                except:
-                    print("\n#####\n\nWarning: Unexpected error in backup: {}\n\nDetail: {}\n\n#####\n".format(
-                        backup["name"],
-                        backup
+                except Exception as err:
+                    print("\n#####\n\nWarning: Unexpected error in backup: {} (Size:{} Upload Time: {})\n\nException: {}\n\n#####\n".format(
+                        backup["name"].split("/")[-1],
+                        human_size(int(backup["sizeBytes"])),
+                        backup["updateTime"],
+                        traceback.format_exc()
                     ))
                     input("Press the <Enter> key to continue...")
 
