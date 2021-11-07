@@ -155,14 +155,14 @@ class WaBackup:
 def getConfigs():
     config = configparser.ConfigParser()
     try:
-        config.read('settings.cfg')
-        gmail = config.get('auth', 'gmail')
+        config.read("settings.cfg")
+        gmail = config.get("auth", "gmail")
         password = config.get("auth", "password", fallback="")
         if not password:
             try:
                 password = getpass("Enter your password for {}: ".format(gmail))
             except KeyboardInterrupt:
-                quit('\nCancelled!')
+                quit("\nCancelled!")
         android_id = config.get("auth", "android_id")
         return {
             "android_id": android_id,
@@ -170,10 +170,10 @@ def getConfigs():
             "password": password,
         }
     except (configparser.NoSectionError, configparser.NoOptionError):
-        quit('The "settings.cfg" file is missing or corrupt!')
+        quit("The 'settings.cfg' file is missing or corrupt!")
 
 def createSettingsFile():
-    with open('settings.cfg', 'w') as cfg:
+    with open("settings.cfg", "w") as cfg:
         cfg.write(dedent("""
             [auth]
             gmail = alias@gmail.com
@@ -206,7 +206,7 @@ def main(args):
     if len(args) != 2 or args[1] not in ("info", "list", "sync"):
         quit(__doc__.format(args[0]))
 
-    if not os.path.isfile('settings.cfg'):
+    if not os.path.isfile("settings.cfg"):
         createSettingsFile()
     wa_backup = WaBackup(**getConfigs())
     backups = wa_backup.backups()
@@ -220,23 +220,37 @@ def main(args):
         total_size = 0
         for backup in backups:
             for file in wa_backup.backup_files(backup):
-                num_files += 1
-                total_size += int(file["sizeBytes"])
-                print(os.path.sep.join(file["name"].split("/")[3:]))
+                try:
+                    num_files += 1
+                    total_size += int(file["sizeBytes"])
+                    print(os.path.sep.join(file["name"].split("/")[3:]))
+                except:
+                    print("\n#####\n\nWarning: Unexpected error in file: {}\n\nDetail: {}\n\n#####\n".format(
+                        os.path.sep.join(file["name"].split("/")[3:]),
+                        file
+                    ))
+                    input("Press the <Enter> key to continue...")
+                    continue
         print("{} files ({})".format(num_files, human_size(total_size)))
 
     elif args[1] == "sync":
         with open("md5sum.txt", "w", encoding="utf-8", buffering=1) as cksums:
             for backup in backups:
                 try:
+                    answer = input("Do you want {}? [y/n] : ".format(backup["name"]))
+                    if not answer or answer[0].lower() != 'y':
+                        continue
                     print("Backup {} ({}):".format(
                         backup["name"],
                         human_size(int(backup["sizeBytes"])),
                     ))
                     wa_backup.fetch_all(backup, cksums)
                 except:
-                    print("Corrupted/Incomplete Backup!");
-                    continue
+                    print("\n#####\n\nWarning: Unexpected error in backup: {}\n\nDetail: {}\n\n#####\n".format(
+                        backup["name"],
+                        backup
+                    ))
+                    input("Press the <Enter> key to continue...")
 
 if __name__ == "__main__":
     main(sys.argv)
