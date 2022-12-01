@@ -23,7 +23,7 @@ Instructions
 
  1. Extract `WhatsApp-GD-Extractor-master.zip`.
  2. Install dependencies: Run `python3 -m pip install -r requirements.txt`
-    from your command console.
+    from your command console. Make sure gpsoauth is the latest version.
  3. Edit the `[auth]` section in `settings.cfg`.
  4. Run `python3 WhatsAppGDExtract.py` from your command console.
  5. Read the usage examples that are displayed.
