@@ -14,8 +14,7 @@ Prerequisites
  3. The device's Android ID (if you want to reduce the risk of being logged
     out of Google). Run `adb shell settings get secure android_id` or Search Google Play for "device id" for plenty of apps
     that can reveal this information.
- 4. Google account login credentials (username and password). App password
-    when using 2-factor authentication.
+ 4. Google account login credentials (username and password). Create and use an App password when using 2-factor authentication: https://myaccount.google.com/apppasswords
 
 
 Instructions
