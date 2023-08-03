@@ -1,0 +1,2 @@
+gpsoauth==1.0.2
+urllib3<2
